@@ -238,7 +238,7 @@ if filename.lower().endswith('.bgcode'):
     print("Please export as plain .gcode from your slicer before running this script.")
     sys.exit(1)
 
-with open(filename, "r") as f:
+with open(filename, "r", encoding="utf-8", errors="replace") as f:
     lines = f.readlines()
 
 
