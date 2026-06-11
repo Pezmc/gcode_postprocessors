@@ -280,12 +280,25 @@ noises = {}
 noises[0] = perlin_to_normalized_wood(0)
 pendingNoise = None
 formerZ = -1
+# A large downward Z move is pre-print repositioning, not a real layer change.
+# Some start gcode (e.g. Prusa CORE One) does several such moves before printing:
+#   G1 Z20 ;lift bed to optimal bed fan height
+#   G0 ... Z15 ;move away and ready for the purge
+# then drops back to the first layer. These must NOT be collected as wood layers,
+# otherwise they pollute the min/max range and the maxZ stop-guard. A z-hop is
+# small (< this threshold), so it is safely ignored here.
+# Assumes single-object prints; sequential ("one at a time") printing also drops
+# Z between objects and would reset collection at each object change.
+bigZDrop = 4
 for line in lines:
     thisZ = get_z(line, formerZ)
 
     if thisZ > 2 + formerZ:
         formerZ = thisZ
-    # noises = {}  # some damn slicers include a big negative Z shift at the beginning, which impacts the min/max range
+    elif thisZ < formerZ - bigZDrop:
+        # big negative Z shift: discard pre-print junk and restart collection
+        noises = {0: perlin_to_normalized_wood(0)}
+        formerZ = thisZ
     elif abs(thisZ - formerZ) > minimumChangeZ and thisZ > skipStartZ:
         formerZ = thisZ
         noises[thisZ] = perlin_to_normalized_wood(thisZ)
@@ -295,6 +308,11 @@ noisesMax = noises[max(noises, key=noises.get)]
 noisesMin = noises[min(noises, key=noises.get)]
 for z, v in noises.items():
     noises[z] = (noises[z] - noisesMin) / (noisesMax - noisesMin)
+
+# Use the true top printing layer as maxZ, not the highest raw Z move. Pre-print
+# bed lifts / repositioning (handled above) would otherwise leave maxZ too high
+# and let the "thisZ == maxZ" stop-guard fire early, disabling all patching.
+maxZ = max(noises)
 
 
 def noise_to_temp(noise):
