@@ -233,6 +233,11 @@ class Perlin:
         return value / total_amplitude
 
 
+if filename.lower().endswith('.bgcode'):
+    print("Error: '%s' is a binary .bgcode file and cannot be processed directly." % filename)
+    print("Please export as plain .gcode from your slicer before running this script.")
+    sys.exit(1)
+
 with open(filename, "r") as f:
     lines = f.readlines()
 
