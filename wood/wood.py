@@ -424,3 +424,7 @@ with open(filename, "w") as f:
                 f.write(line)
 
     f.write(graphStr + eol)
+
+# Echo the generated graph to the console so it is easy to see what the wood
+# effect produced without having to open the patched gcode file.
+print(graphStr.replace(";WoodGraph: ", "").replace(";WoodGraph:", ""))
