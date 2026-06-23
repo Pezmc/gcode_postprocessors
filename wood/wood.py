@@ -5,7 +5,7 @@
 #Param: minTemp(float:180) Minimum print temperature (degree C)
 #Param: maxTemp(float:230) Maximum print temperature (degree C)
 #Param: grainSize(float:3.0) Average "wood grain" size (mm)
-#Param: firstTemp(float:0) Starting temperature (degree C, zero to disable)
+#Param: firstTemp(float:0) First-layer temperature for bed adhesion (degree C; 0 = auto = hottest end of range, negative = disable and let the wood effect vary the first layer)
 #Param: spikinessPower(float:1.0) Relative thickness of light bands (power, >1 to make dark bands sparser)
 #Param: maxUpward(float:0) Instant temperature increase limit, as required by some firmwares (C)
 #Param: maxDownward(float:0) Instant temperature decrease limit, as some firmwares halt on big drops (C)
@@ -335,6 +335,17 @@ def z_hop_scan_ahead(index, z):
     return False  # Did not find z-hop
 
 
+# Resolve the first-layer temperature policy. The first layer(s) are held at this
+# temperature for strong bed adhesion instead of being driven by the wood noise.
+#   firstTemp == 0  -> auto: use maxTemp (hottest end of the range) -- the default
+#   firstTemp  > 0  -> explicit hold temperature
+#   firstTemp  < 0  -> disabled: let the wood effect vary the first layer too
+if firstTemp == 0:
+    firstTemp = maxTemp
+holdFirstLayer = firstTemp > 0
+firstTempHeight = 0.5  # hold the first this-many mm of print at firstTemp
+
+
 #
 # Now save the file with the patched M104 temperature settings
 #
@@ -344,9 +355,7 @@ with open(filename, "w") as f:
     f.write(";woodified gcode, see graph at the end - jeremie.francois@gmail.com - generated on " +
             datetime.datetime.now().strftime("%Y%m%d-%H%M") + eol)
     warmingTempCommands = "M230 S0" + eol  # enable wait for temp on the first change
-    t = firstTemp
-    if t == 0:
-        t = noise_to_temp(0)
+    t = firstTemp if holdFirstLayer else noise_to_temp(0)
     warmingTempCommands += ("%s S%i" + eol) % (tempCommand, t)
     # The two following commands depends on the firmware:
     warmingTempCommands += "M230 S1" + eol  # now disable wait for temp on the first change
@@ -389,7 +398,7 @@ with open(filename, "w") as f:
                 thisZ = get_z(line, formerZ)
                 if thisZ != formerZ and thisZ in noises and not z_hop_scan_ahead(index, thisZ):
 
-                    if firstTemp != 0 and thisZ <= 0.5:  # if specified, keep the first temp for the first 0.5mm
+                    if holdFirstLayer and thisZ <= firstTempHeight:  # hold first layer(s) for bed adhesion
                         temp = firstTemp
                     else:
                         temp = noise_to_temp(noises[thisZ])
