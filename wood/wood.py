@@ -327,6 +327,8 @@ def z_hop_scan_ahead(index, z):
     if scanForZHop == 0:
         return False  # Do not scan ahead
     for i in range(scanForZHop):
+        if index + i >= len(lines):
+            break  # Reached end of file: nothing more to scan
         checkZ = get_z(lines[index + i], z)
         if checkZ < z:
             return True  # Found z-hop
