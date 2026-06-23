@@ -41,8 +41,6 @@ import getopt
 # It will "patch" your gcode file with the appropriate M104 temperature change.
 #
 
-# TODO: support  UTF8 for both python3 and 2, e.g. open(filename, "r", encoding="utf_8")
-
 def plugin_standalone_usage(myName):
     print("Usage:")
     print("  " + myName
