@@ -243,16 +243,11 @@ with open(filename, "r", encoding="utf-8", errors="replace") as f:
 # Limit the number of changes for helicoidal/Joris slicing method
 minimumChangeZ = 0.1
 
-# Find the total height of the object (minus optional additional Z-hops)
-maxZ = 0
-thisZ = 0
+# Detect the file's existing line ending so the lines we add stay consistent.
+# (maxZ is computed later from the collected layers, see "maxZ = max(noises)".)
 eol = "#"
 for line in lines:
-    thisZ = get_z(line)
-    if thisZ is not None:
-        if maxZ < thisZ:
-            maxZ = thisZ
-    if eol == "#" and len(line) >= 2:  # detect existing EOL to stay consistent when we'll be adding our own lines
+    if eol == "#" and len(line) >= 2:
         if line[-2] == "\r":  # windows...
             eol = "\r\n"
 if eol == "#":
