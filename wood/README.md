@@ -6,6 +6,17 @@ This is a script that adds "texture" (thanks to temperature gradients), so as to
 
 More pictures and how it works is described on [this blog post](http://www.tridimake.com/2012/10/shades-of-brown-with-wood-filament-via.html) and on the [Thingiverse web page](https://www.thingiverse.com/thing:49276) (the script there might be older but more people is testng it).
 
+# Changes in this fork
+
+This fork ([Pezmc/gcode_postprocessors](https://github.com/Pezmc/gcode_postprocessors)) adds fixes for modern slicers on top of the original [MoonCactus/gcode_postprocessors](https://github.com/MoonCactus/gcode_postprocessors):
+
+* **Works with modern slicer start g-code.** Slicers such as PrusaSlicer for the Prusa CORE One emit large bed lifts / repositioning moves before printing (e.g. `G1 Z20` to set bed-fan height). These were being collected as if they were print layers, which polluted the temperature min/max range and pushed `maxZ` too high — so the early-stop guard fired immediately and **the wood effect was silently disabled**. Large downward Z moves now reset layer collection, and the top layer is taken from the real collected layers.
+* **Reads files as UTF-8.** G-code is now read as UTF-8 (with replacement for stray bytes) instead of crashing on non-ASCII characters — this fixes the long-standing Windows/Python 3 encoding bug that was previously only noted as a caveat.
+* **Rejects binary `.bgcode` files with a clear message.** PrusaSlicer can export binary g-code, which this script cannot patch; it now exits with an explanation telling you to export plain `.gcode`, instead of corrupting the file.
+* **Guards the Z-hop look-ahead against the end of the file**, so scanning ahead near the last lines can no longer raise an index error.
+* **Echoes the temperature graph to the console** after patching, so you can see the generated curve without opening the patched file.
+* **Silences a Python regex deprecation warning** by using a raw string for the number-matching pattern.
+
 # How to
 
 ## As a plugin for Cura
@@ -101,5 +112,5 @@ It shows the variations of temperature according to the Z height, so you can get
 
 # Bugs and caveat
 
-Bug: some people reported UTF8 issues when running Python3 on Windows. Do not run Python3 or better, do not run Windows and you will be good :-D More seriously I may fix the bug one day, but I really want to be compatible with both versions of windows (ref.: http://stackoverflow.com/questions/10971033/backporting-python-3-openencoding-utf-8-to-python-2 )
+Bug: some people reported UTF8 issues when running Python3 on Windows. *(Fixed in this fork — files are now read as UTF-8 with replacement, see [Changes in this fork](#changes-in-this-fork).)* The original note follows for reference: Do not run Python3 or better, do not run Windows and you will be good :-D More seriously I may fix the bug one day, but I really want to be compatible with both versions of windows (ref.: http://stackoverflow.com/questions/10971033/backporting-python-3-openencoding-utf-8-to-python-2 )
 
